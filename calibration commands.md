@@ -1,9 +1,9 @@
 
-roslaunch cwru_davinci_vision davinci_endo.launch 
+$    roslaunch cwru_davinci_vision davinci_endo.launch 
 
-roslaunch cwru_davinci_vision davinci_endo_view.launch
+$    roslaunch cwru_davinci_vision davinci_endo_view.launch
 
-rosrun rviz rviz
+$    rosrun rviz rviz
 
 no point cloud? check usb_stereo.launch, the camera_frame_id for left and right should be the same
 
