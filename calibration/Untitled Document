@@ -1,0 +1,7 @@
+rosrun camera_calibration cameracalibrator.py --size 5x3 --square 0.015 --approximate=0.1 right:= /davinci_endo/right/image_raw left:=/davinci_endo/left/image_raw right_camera:=/davinci_endo/right left_camera:=/davinci_endo/left
+
+rosrun image_view image_view image:=/davinci_endo/left/image_raw
+
+rosrun image_view image_view image:=/davinci_endo/right/image_raw
+
+
