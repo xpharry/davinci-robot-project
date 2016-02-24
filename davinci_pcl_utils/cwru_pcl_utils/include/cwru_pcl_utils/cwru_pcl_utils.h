@@ -60,8 +60,12 @@ public:
     void fit_points_to_plane(Eigen::MatrixXf points_array, 
         Eigen::Vector3f &plane_normal, 
         double &plane_dist); 
-    Eigen::Vector3f compute_centroid(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr);
     
+    // used when output a plane point cloud
+    Eigen::Vector3f get_centroid(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr);
+    Eigen::Vector3f get_plane_normal(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr);
+    Eigen::Vector3f get_major_axis(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr);
+
     void fit_points_to_plane(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr,Eigen::Vector3f &plane_normal, double &plane_dist);
     void fit_xformed_selected_pts_to_plane(Eigen::Vector3f &plane_normal, double &plane_dist);  
 
@@ -119,8 +123,12 @@ public:
                     Eigen::Vector3d normalized_avg_color,
                     double color_match_thresh, vector<int> &output_indices);
 
-    Eigen::Vector3f get_centroid(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr get_all_points() {return pclKinect_ptr_;}; // obtain selected points
     pcl::PointCloud<pcl::PointXYZ>::Ptr get_selected_points() {return pclSelectedPoints_ptr_;}; // obtain selected points
+    pcl::PointCloud<pcl::PointXYZ>::Ptr get_genpurpose_points() {return pclGenPurposeCloud_ptr_;}; // obtain selected points
+    void offset_pcl_operation();
+    void extract_coplanar_pcl_operation(Eigen::Vector3f centroid);
+    void print_points(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr);
 
 private:
     ros::NodeHandle nh_; 
@@ -153,12 +161,16 @@ private:
     void kinectCB(const sensor_msgs::PointCloud2ConstPtr& cloud); //prototype for callback fnc
     void selectCB(const sensor_msgs::PointCloud2ConstPtr& cloud); // callback for selected points  
 
-    Eigen::Vector3f major_axis_,centroid_; 
+    Eigen::Vector3f plane_normal_, major_axis_, centroid_;
     Eigen::Vector3d avg_color_;
     vector<int> indices_; // put interesting indices here
     //prototype for example service
     //bool serviceCallback(example_srv::simple_bool_service_messageRequest& request, example_srv::simple_bool_service_messageResponse& response);
 
+    Eigen::Vector3f compute_centroid(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr);
+    void compute_plane_normal_and_major_axis(Eigen::MatrixXf points_mat);
+    void compute_plane_normal_and_major_axis(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr);
+    double distance_between(Eigen::Vector3f pt1, Eigen::Vector3f pt2);
 }; // note: a class definition requires a semicolon at the end of the definition
 
 #endif  // this closes the header-include trick...ALWAYS need one of these to match #ifndef

@@ -17,13 +17,6 @@ pclTransformedSelectedPoints_ptr_(new PointCloud<pcl::PointXYZ>),pclGenPurposeCl
     got_selected_points_ = false;
 }
 
-
-Eigen::Vector3f CwruPclUtils::get_centroid(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr) {
-    return compute_centroid(cloud_ptr);
-}
-
-
-
 void CwruPclUtils::fit_points_to_plane(Eigen::MatrixXf points_mat, Eigen::Vector3f &plane_normal, double &plane_dist) {
     //ROS_INFO("starting identification of plane from data: ");
     int npts = points_mat.cols(); // number of points = number of columns in matrix; check the size
@@ -162,7 +155,7 @@ Eigen::Vector3f  CwruPclUtils::compute_centroid(pcl::PointCloud<pcl::PointXYZ>::
 
     for (int ipt = 0; ipt < npts; ipt++) {
         cloud_pt = input_cloud_ptr->points[ipt].getVector3fMap();
-        cout<<"each: "<<cloud_pt.transpose()<<endl;
+        // cout<<"Point No."<<ipt<<": "<<cloud_pt.transpose()<<endl;
         centroid += cloud_pt; //add all the column vectors together
     }
     centroid/= npts; //divide by the number of points to get the centroid
@@ -608,4 +601,154 @@ void CwruPclUtils::selectCB(const sensor_msgs::PointCloud2ConstPtr& cloud) {
     ROS_INFO("done w/ selected-points callback");
 
     got_selected_points_ = true;
+}
+
+
+// =============================================================
+Eigen::Vector3f CwruPclUtils::get_centroid(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr) {
+    return compute_centroid(cloud_ptr);
+}
+
+Eigen::Vector3f CwruPclUtils::get_plane_normal(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr) {
+    compute_plane_normal_and_major_axis(cloud_ptr);
+    return plane_normal_;
+}
+
+Eigen::Vector3f CwruPclUtils::get_major_axis(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr) {
+    compute_plane_normal_and_major_axis(cloud_ptr);
+    return major_axis_;
+}
+
+// code to determine major axis
+void CwruPclUtils::compute_plane_normal_and_major_axis(Eigen::MatrixXf points_mat) {
+    ROS_INFO("starting computation of plane_normal_and_major_axis from data: ");
+    int npts = points_mat.cols(); // number of points = number of columns in matrix; check the size
+
+    // centroid_ has been computed before
+    // subtract this centroid from all points in points_mat:
+    Eigen::MatrixXf points_offset_mat = points_mat;
+    for (int ipt = 0; ipt < npts; ipt++) {
+        points_offset_mat.col(ipt) = points_offset_mat.col(ipt) - centroid_;
+    }
+    //compute the covariance matrix w/rt x,y,z:
+    Eigen::Matrix3f CoVar;
+    CoVar = points_offset_mat * (points_offset_mat.transpose()); //3xN matrix times Nx3 matrix is 3x3
+    //cout<<"covariance: "<<endl;
+    //cout<<CoVar<<endl;
+
+    // here is a more complex object: a solver for eigenvalues/eigenvectors;
+    // we will initialize it with our covariance matrix, which will induce computing eval/evec pairs
+    Eigen::EigenSolver<Eigen::Matrix3f> es3f(CoVar);
+
+    Eigen::VectorXf evals; //we'll extract the eigenvalues to here
+    evals = es3f.eigenvalues().real(); // grab just the real parts
+
+    double min_lambda = evals[0]; //initialize the hunt for min eval
+    double max_lambda = evals[0]; // and for max eval
+
+    plane_normal_ = es3f.eigenvectors().col(0).real(); //complex_vec.real(); //strip off the real part
+    major_axis_ = es3f.eigenvectors().col(0).real(); // starting assumptions
+
+    double lambda_test;
+    int i_normal = 0;
+    int i_major_axis=0;
+    //loop through "all" ("both", in this 3-D case) the rest of the solns, seeking min e-val
+    for (int ivec = 1; ivec < 3; ivec++) {
+        lambda_test = evals[ivec];
+        if (lambda_test < min_lambda) {
+            min_lambda = lambda_test;
+            i_normal = ivec; //this index is closer to index of min eval
+            plane_normal_ = es3f.eigenvectors().col(i_normal).real();
+        }
+        if (lambda_test > max_lambda) {
+            max_lambda = lambda_test;
+            i_major_axis = ivec; //this index is closer to index of min eval
+            major_axis_ = es3f.eigenvectors().col(i_major_axis).real();
+        }        
+    }
+    // at this point, we have the minimum eval in "min_lambda", and the plane normal
+    // (corresponding evec) in "est_plane_normal"/
+    // these correspond to the ith entry of i_normal
+    cout<<"min eval is "<<min_lambda<<", corresponding to component "<<i_normal<<endl;
+    cout<<"corresponding evec (est plane normal): "<<plane_normal_.transpose()<<endl;
+    cout<<"max eval is "<<max_lambda<<", corresponding to component "<<i_major_axis<<endl;
+    cout<<"corresponding evec (est major axis): "<<major_axis_.transpose()<<endl;    
+    
+    //cout<<"correct answer is: "<<normal_vec.transpose()<<endl;
+    //plane_dist = plane_normal.dot(centroid_);
+    //cout<<"est plane distance from origin = "<<est_dist<<endl;
+    //cout<<"correct answer is: "<<dist<<endl;
+    //cout<<endl<<endl;  
+}
+
+//get pts from cloud, pack the points into an Eigen::MatrixXf, then use above
+void CwruPclUtils::compute_plane_normal_and_major_axis(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr) {
+    Eigen::MatrixXf points_mat;
+    Eigen::Vector3f cloud_pt;
+    //populate points_mat from cloud data;
+    centroid_ = get_centroid(input_cloud_ptr);
+
+    int npts = input_cloud_ptr->points.size();
+    points_mat.resize(3, npts);
+
+    //somewhat odd notation: getVector3fMap() reading OR WRITING points from/to a pointcloud, with conversions to/from Eigen
+    for (int i = 0; i < npts; ++i) {
+        cloud_pt = input_cloud_ptr->points[i].getVector3fMap();
+        points_mat.col(i) = cloud_pt;
+    }
+    compute_plane_normal_and_major_axis(points_mat);
+}
+
+void CwruPclUtils::offset_pcl_operation() {
+    int npts = pclKinect_ptr_->points.size(); //number of points
+    copy_cloud(pclKinect_ptr_,pclGenPurposeCloud_ptr_); //now have a copy of the selected points in gen-purpose object
+    Eigen::Vector3f offset;
+    offset<<0,0,0.05;
+    for (int i = 0; i < npts; ++i) {
+        pclGenPurposeCloud_ptr_->points[i].getVector3fMap() = pclGenPurposeCloud_ptr_->points[i].getVector3fMap()+offset;   
+    }    
+} 
+
+/**
+    This function is what I wrote to extract the plane that colanar with the selected patch.
+    Wrote by Peng Xu.
+*/
+void CwruPclUtils::extract_coplanar_pcl_operation(Eigen::Vector3f centroid) {
+    int npts = pclKinect_ptr_->points.size(); //number of points in kinect point cloud
+    //pclGenPurposeCloud_ptr_->points.resize(npts);
+    
+    cout<< "coplanar ... " << endl;
+
+    for (int i = 0; i < npts; ++i) {
+        if( distance_between( centroid, pclKinect_ptr_->points[i].getVector3fMap() ) < 0.0001
+                && ( centroid[2] - pclKinect_ptr_->points[i].getVector3fMap()[2] ) < 0.000001
+                && ( centroid[2] - pclKinect_ptr_->points[i].getVector3fMap()[2] ) > -0.000001 ) {
+
+            // cout << "height of centroid = " << centroid[2] << endl;
+            // cout << "the height of point " << i << "= " << pclKinect_ptr_->points[i].getVector3fMap()[2] << endl;
+            pclGenPurposeCloud_ptr_->points.push_back(pclKinect_ptr_->points[i]);
+        }  
+    }
+
+    pclGenPurposeCloud_ptr_->header = pclKinect_ptr_->header;
+    pclGenPurposeCloud_ptr_->is_dense = pclKinect_ptr_->is_dense;
+    pclGenPurposeCloud_ptr_->width = npts;
+    pclGenPurposeCloud_ptr_->height = 1; 
+} 
+
+double CwruPclUtils::distance_between(Eigen::Vector3f pt1, Eigen::Vector3f pt2) {
+    Eigen::Vector3f pt = pt1 - pt2;
+    double distance = pt(0)*pt(0) + pt(1)*pt(1) + pt(2)*pt(2);
+    return distance;
+}
+
+void CwruPclUtils::print_points(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr) {
+    int npts = input_cloud_ptr->points.size();
+    Eigen::Vector3f cloud_pt;
+
+    //somewhat odd notation: getVector3fMap() reading OR WRITING points from/to a pointcloud, with conversions to/from Eigen
+    for (int i = 0; i < npts; ++i) {
+        cloud_pt = input_cloud_ptr->points[i].getVector3fMap();
+        cout<<"Point No."<<i<<": "<<cloud_pt.transpose()<<endl;
+    }
 }
