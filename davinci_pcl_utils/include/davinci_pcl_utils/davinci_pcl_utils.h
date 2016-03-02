@@ -1,13 +1,13 @@
-// cwru_pcl_utils.h header file; doxygen comments follow //
+// davinci_pcl_utils.h header file; doxygen comments follow //
 /// wsn; Oct, 2015.  
-/// Include this file in "cwru_pcl_utils.cpp", and in any main that uses this library.
+/// Include this file in "davinci_pcl_utils.cpp", and in any main that uses this library.
 ///This class provides example functions using the Point Cloud Library to operate
 /// on point-cloud data
 
-#ifndef CWRU_PCL_UTILS_H_
-#define CWRU_PCL_UTILS_H_
+#ifndef DAVINCI_PCL_UTILS_H_
+#define DAVINCI_PCL_UTILS_H_
 
-#include<ros/ros.h> //generic C++ stuff
+#include <ros/ros.h> //generic C++ stuff
 #include <stdlib.h>
 #include <math.h>
 #include <iostream>
@@ -21,6 +21,7 @@
 #include <sensor_msgs/PointCloud2.h> //useful ROS message types
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Point.h>
 
 #include <cwru_msgs/PatchParams.h>
 
@@ -43,10 +44,10 @@ using namespace pcl;
 using namespace pcl::io;
 
 // define a class, including a constructor, member variables and member functions
-class CwruPclUtils
+class DavinciPclUtils
 {
 public:
-    CwruPclUtils(ros::NodeHandle* nodehandle); //constructor
+    DavinciPclUtils(ros::NodeHandle* nodehandle); //constructor
 
      // insert doxygen documentation of member fncs;  run "doxywizard" to create documentation
 

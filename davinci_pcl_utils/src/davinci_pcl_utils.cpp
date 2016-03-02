@@ -1,10 +1,10 @@
-// cwru_pcl_utils: a  ROS library to illustrate use of PCL, including some handy utility functions
+// davinci_pcl_utils: a  ROS library to illustrate use of PCL, including some handy utility functions
 //
 
-#include <cwru_pcl_utils/cwru_pcl_utils.h>
+#include <davinci_pcl_utils/davinci_pcl_utils.h>
 //uses initializer list for member vars
 
-CwruPclUtils::CwruPclUtils(ros::NodeHandle* nodehandle) : nh_(*nodehandle), pclKinect_ptr_(new PointCloud<pcl::PointXYZ>),
+DavinciPclUtils::DavinciPclUtils(ros::NodeHandle* nodehandle) : nh_(*nodehandle), pclKinect_ptr_(new PointCloud<pcl::PointXYZ>),
         pclKinect_clr_ptr_(new PointCloud<pcl::PointXYZRGB>),
 pclTransformed_ptr_(new PointCloud<pcl::PointXYZ>), pclSelectedPoints_ptr_(new PointCloud<pcl::PointXYZ>),
         pclSelectedPtsClr_ptr_(new PointCloud<pcl::PointXYZRGB>),
@@ -17,7 +17,7 @@ pclTransformedSelectedPoints_ptr_(new PointCloud<pcl::PointXYZ>),pclGenPurposeCl
     got_selected_points_ = false;
 }
 
-void CwruPclUtils::fit_points_to_plane(Eigen::MatrixXf points_mat, Eigen::Vector3f &plane_normal, double &plane_dist) {
+void DavinciPclUtils::fit_points_to_plane(Eigen::MatrixXf points_mat, Eigen::Vector3f &plane_normal, double &plane_dist) {
     //ROS_INFO("starting identification of plane from data: ");
     int npts = points_mat.cols(); // number of points = number of columns in matrix; check the size
     
@@ -128,7 +128,7 @@ void CwruPclUtils::fit_points_to_plane(Eigen::MatrixXf points_mat, Eigen::Vector
 //get pts from cloud, pack the points into an Eigen::MatrixXf, then use above
 // fit_points_to_plane fnc
 
-void CwruPclUtils::fit_points_to_plane(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr, Eigen::Vector3f &plane_normal, double &plane_dist) {
+void DavinciPclUtils::fit_points_to_plane(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr, Eigen::Vector3f &plane_normal, double &plane_dist) {
     Eigen::MatrixXf points_mat;
     Eigen::Vector3f cloud_pt;
     //populate points_mat from cloud data;
@@ -146,7 +146,7 @@ void CwruPclUtils::fit_points_to_plane(pcl::PointCloud<pcl::PointXYZ>::Ptr input
 }
 
 //compute and return the centroid of a pointCloud
-Eigen::Vector3f  CwruPclUtils::compute_centroid(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr) {
+Eigen::Vector3f  DavinciPclUtils::compute_centroid(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr) {
     Eigen::Vector3f centroid;
     Eigen::Vector3f cloud_pt;   
     int npts = input_cloud_ptr->points.size();    
@@ -165,7 +165,7 @@ Eigen::Vector3f  CwruPclUtils::compute_centroid(pcl::PointCloud<pcl::PointXYZ>::
 
 // this fnc operates on transformed selected points
 
-void CwruPclUtils::fit_xformed_selected_pts_to_plane(Eigen::Vector3f &plane_normal, double &plane_dist) {
+void DavinciPclUtils::fit_xformed_selected_pts_to_plane(Eigen::Vector3f &plane_normal, double &plane_dist) {
     fit_points_to_plane(pclTransformedSelectedPoints_ptr_, plane_normal, plane_dist);
     //Eigen::Vector3f centroid;
     cwru_msgs::PatchParams patch_params_msg;
@@ -184,7 +184,7 @@ void CwruPclUtils::fit_xformed_selected_pts_to_plane(Eigen::Vector3f &plane_norm
     patch_publisher_.publish(patch_params_msg);
 }
 
-Eigen::Affine3f CwruPclUtils::transformTFToEigen(const tf::Transform &t) {
+Eigen::Affine3f DavinciPclUtils::transformTFToEigen(const tf::Transform &t) {
     Eigen::Affine3f e;
     // treat the Eigen::Affine as a 4x4 matrix:
     for (int i = 0; i < 3; i++) {
@@ -205,7 +205,7 @@ Eigen::Affine3f CwruPclUtils::transformTFToEigen(const tf::Transform &t) {
  * 
  * @param A [in] supply an Eigen::Affine3f, such that output_points = A*input_points
  */
-void CwruPclUtils::transform_kinect_cloud(Eigen::Affine3f A) {
+void DavinciPclUtils::transform_kinect_cloud(Eigen::Affine3f A) {
     transform_cloud(A, pclKinect_ptr_, pclTransformed_ptr_);
     /*
     pclTransformed_ptr_->header = pclKinect_ptr_->header;
@@ -223,13 +223,13 @@ void CwruPclUtils::transform_kinect_cloud(Eigen::Affine3f A) {
      * */
 }
 
-void CwruPclUtils::transform_selected_points_cloud(Eigen::Affine3f A) {
+void DavinciPclUtils::transform_selected_points_cloud(Eigen::Affine3f A) {
     transform_cloud(A, pclSelectedPoints_ptr_, pclTransformedSelectedPoints_ptr_);
 }
 
 //    void get_transformed_selected_points(pcl::PointCloud<pcl::PointXYZ> & outputCloud );
 
-void CwruPclUtils::get_transformed_selected_points(pcl::PointCloud<pcl::PointXYZ> & outputCloud ) {
+void DavinciPclUtils::get_transformed_selected_points(pcl::PointCloud<pcl::PointXYZ> & outputCloud ) {
     int npts = pclTransformedSelectedPoints_ptr_->points.size(); //how many points to extract?
     outputCloud.header = pclTransformedSelectedPoints_ptr_->header;
     outputCloud.is_dense = pclTransformedSelectedPoints_ptr_->is_dense;
@@ -244,7 +244,7 @@ void CwruPclUtils::get_transformed_selected_points(pcl::PointCloud<pcl::PointXYZ
 }
 
 //same as above, but for general-purpose cloud
-void CwruPclUtils::get_gen_purpose_cloud(pcl::PointCloud<pcl::PointXYZ> & outputCloud ) {
+void DavinciPclUtils::get_gen_purpose_cloud(pcl::PointCloud<pcl::PointXYZ> & outputCloud ) {
     int npts = pclGenPurposeCloud_ptr_->points.size(); //how many points to extract?
     outputCloud.header = pclGenPurposeCloud_ptr_->header;
     outputCloud.is_dense = pclGenPurposeCloud_ptr_->is_dense;
@@ -258,7 +258,7 @@ void CwruPclUtils::get_gen_purpose_cloud(pcl::PointCloud<pcl::PointXYZ> & output
     }    
 } 
 
-//void CwruPclUtils::get_indices(vector<int> &indices,) {
+//void DavinciPclUtils::get_indices(vector<int> &indices,) {
 //    indices = indicies_;
 //}
 
@@ -267,7 +267,7 @@ void CwruPclUtils::get_gen_purpose_cloud(pcl::PointCloud<pcl::PointXYZ> & output
 
 // The operation illustrated here is not all that useful.  It uses transformed, selected points,
 // elevates the data by 5cm, and copies the result to the general-purpose cloud variable
-void CwruPclUtils::example_pcl_operation() {
+void DavinciPclUtils::example_pcl_operation() {
     int npts = pclTransformedSelectedPoints_ptr_->points.size(); //number of points
     copy_cloud(pclTransformedSelectedPoints_ptr_,pclGenPurposeCloud_ptr_); //now have a copy of the selected points in gen-purpose object
     Eigen::Vector3f offset;
@@ -279,7 +279,7 @@ void CwruPclUtils::example_pcl_operation() {
 
 //This fnc populates and output cloud of type XYZRGB extracted from the full Kinect cloud (in Kinect frame)
 // provide a vector of indices and a holder for the output cloud, which gets populated
-void CwruPclUtils::copy_indexed_pts_to_output_cloud(vector<int> &indices,PointCloud<pcl::PointXYZRGB> &outputCloud) {
+void DavinciPclUtils::copy_indexed_pts_to_output_cloud(vector<int> &indices,PointCloud<pcl::PointXYZRGB> &outputCloud) {
     int npts = indices.size(); //how many points to extract?
     outputCloud.header = pclKinect_clr_ptr_->header;
     outputCloud.is_dense = pclKinect_clr_ptr_->is_dense;
@@ -307,7 +307,7 @@ void CwruPclUtils::copy_indexed_pts_to_output_cloud(vector<int> &indices,PointCl
 
 // comb through kinect colors and compute average color
 // disregard color=0,0,0 
-Eigen::Vector3d CwruPclUtils::find_avg_color() {
+Eigen::Vector3d DavinciPclUtils::find_avg_color() {
     Eigen::Vector3d avg_color;
     Eigen::Vector3d pt_color;
     Eigen::Vector3d ref_color;
@@ -333,7 +333,7 @@ Eigen::Vector3d CwruPclUtils::find_avg_color() {
  
 }
 
-Eigen::Vector3d CwruPclUtils::find_avg_color_selected_pts(vector<int> &indices) {
+Eigen::Vector3d DavinciPclUtils::find_avg_color_selected_pts(vector<int> &indices) {
     Eigen::Vector3d avg_color;
     Eigen::Vector3d pt_color;
     //Eigen::Vector3d ref_color;
@@ -353,7 +353,7 @@ Eigen::Vector3d CwruPclUtils::find_avg_color_selected_pts(vector<int> &indices) 
     return avg_color;
 }
 
-void CwruPclUtils::find_indices_color_match(vector<int> &input_indices,
+void DavinciPclUtils::find_indices_color_match(vector<int> &input_indices,
                     Eigen::Vector3d normalized_avg_color,
                     double color_match_thresh, vector<int> &output_indices) {
      Eigen::Vector3d pt_color;
@@ -379,17 +379,17 @@ void CwruPclUtils::find_indices_color_match(vector<int> &input_indices,
 } 
 
 //special case of above for transformed Kinect pointcloud:
-void CwruPclUtils::filter_cloud_z(double z_nom, double z_eps, 
+void DavinciPclUtils::filter_cloud_z(double z_nom, double z_eps, 
                 double radius, Eigen::Vector3f centroid, vector<int> &indices) {
    filter_cloud_z(pclTransformed_ptr_, z_nom, z_eps, radius, centroid,indices);      
 }
 
 //operate on transformed Kinect pointcloud:
-void CwruPclUtils::find_coplanar_pts_z_height(double plane_height,double z_eps,vector<int> &indices) {
+void DavinciPclUtils::find_coplanar_pts_z_height(double plane_height,double z_eps,vector<int> &indices) {
     filter_cloud_z(pclTransformed_ptr_,plane_height,z_eps,indices);
 }
 
-void CwruPclUtils::filter_cloud_z(PointCloud<pcl::PointXYZ>::Ptr inputCloud, double z_nom, double z_eps, vector<int> &indices) {
+void DavinciPclUtils::filter_cloud_z(PointCloud<pcl::PointXYZ>::Ptr inputCloud, double z_nom, double z_eps, vector<int> &indices) {
     int npts = inputCloud->points.size();
     Eigen::Vector3f pt;
     indices.clear();
@@ -410,7 +410,7 @@ void CwruPclUtils::filter_cloud_z(PointCloud<pcl::PointXYZ>::Ptr inputCloud, dou
 }
 
 //find points that are both (approx) coplanar at height z_nom AND within "radius" of "centroid"
-void CwruPclUtils::filter_cloud_z(PointCloud<pcl::PointXYZ>::Ptr inputCloud, double z_nom, double z_eps, 
+void DavinciPclUtils::filter_cloud_z(PointCloud<pcl::PointXYZ>::Ptr inputCloud, double z_nom, double z_eps, 
                 double radius, Eigen::Vector3f centroid, vector<int> &indices)  {
     int npts = inputCloud->points.size();
     Eigen::Vector3f pt;
@@ -436,7 +436,7 @@ void CwruPclUtils::filter_cloud_z(PointCloud<pcl::PointXYZ>::Ptr inputCloud, dou
 }
     
 
-void CwruPclUtils::analyze_selected_points_color() {
+void DavinciPclUtils::analyze_selected_points_color() {
     int npts = pclTransformedSelectedPoints_ptr_->points.size(); //number of points
     //copy_cloud(pclTransformedSelectedPoints_ptr_,pclGenPurposeCloud_ptr_); //now have a copy of the selected points in gen-purpose object
     //Eigen::Vector3f offset;
@@ -471,7 +471,7 @@ void CwruPclUtils::analyze_selected_points_color() {
 //generic function to copy an input cloud to an output cloud
 // provide pointers to the two clouds
 //output cloud will get resized
-void CwruPclUtils::copy_cloud(PointCloud<pcl::PointXYZ>::Ptr inputCloud, PointCloud<pcl::PointXYZ>::Ptr outputCloud) {
+void DavinciPclUtils::copy_cloud(PointCloud<pcl::PointXYZ>::Ptr inputCloud, PointCloud<pcl::PointXYZ>::Ptr outputCloud) {
     int npts = inputCloud->points.size(); //how many points to extract?
     outputCloud->header = inputCloud->header;
     outputCloud->is_dense = inputCloud->is_dense;
@@ -486,7 +486,7 @@ void CwruPclUtils::copy_cloud(PointCloud<pcl::PointXYZ>::Ptr inputCloud, PointCl
 }
 
 //given indices of interest, chosen points from input colored cloud to output colored cloud
-void CwruPclUtils::copy_cloud_xyzrgb_indices(PointCloud<pcl::PointXYZRGB>::Ptr inputCloud, vector<int> &indices, PointCloud<pcl::PointXYZRGB>::Ptr outputCloud) {
+void DavinciPclUtils::copy_cloud_xyzrgb_indices(PointCloud<pcl::PointXYZRGB>::Ptr inputCloud, vector<int> &indices, PointCloud<pcl::PointXYZRGB>::Ptr outputCloud) {
     int npts = indices.size(); //how many points to extract?
     outputCloud->header = inputCloud->header;
     outputCloud->is_dense = inputCloud->is_dense;
@@ -504,7 +504,7 @@ void CwruPclUtils::copy_cloud_xyzrgb_indices(PointCloud<pcl::PointXYZRGB>::Ptr i
 
 //need to fix this to put proper frame_id in header
 
-void CwruPclUtils::transform_cloud(Eigen::Affine3f A, pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr,
+void DavinciPclUtils::transform_cloud(Eigen::Affine3f A, pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr,
         pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud_ptr) {
     output_cloud_ptr->header = input_cloud_ptr->header;
     output_cloud_ptr->is_dense = input_cloud_ptr->is_dense;
@@ -524,21 +524,21 @@ void CwruPclUtils::transform_cloud(Eigen::Affine3f A, pcl::PointCloud<pcl::Point
 // note odd syntax: &ExampleRosClass::subscriberCallback is a pointer to a member function of ExampleRosClass
 // "this" keyword is required, to refer to the current instance of ExampleRosClass
 
-void CwruPclUtils::initializeSubscribers() {
+void DavinciPclUtils::initializeSubscribers() {
     ROS_INFO("Initializing Subscribers");
 
-    pointcloud_subscriber_ = nh_.subscribe("davinci_endo/points2", 1, &CwruPclUtils::kinectCB, this); //"/kinect/depth/points"
+    pointcloud_subscriber_ = nh_.subscribe("davinci_endo/points2", 1, &DavinciPclUtils::kinectCB, this); //"/kinect/depth/points"
     // add more subscribers here, as needed
 
     // subscribe to "selected_points", which is published by Rviz tool
-    selected_points_subscriber_ = nh_.subscribe<sensor_msgs::PointCloud2> ("/selected_points", 1, &CwruPclUtils::selectCB, this);
+    selected_points_subscriber_ = nh_.subscribe<sensor_msgs::PointCloud2> ("/selected_points", 1, &DavinciPclUtils::selectCB, this);
 }
 
 //member helper function to set up publishers;
 
-void CwruPclUtils::initializePublishers() {
+void DavinciPclUtils::initializePublishers() {
     ROS_INFO("Initializing Publishers");
-    pointcloud_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>("cwru_pcl_pointcloud", 1, true);
+    pointcloud_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>("davinci_pcl_pointcloud", 1, true);
     patch_publisher_ = nh_.advertise<cwru_msgs::PatchParams>("pcl_patch_params", 1, true);
     //add more publishers, as needed
     // note: COULD make minimal_publisher_ a public member function, if want to use it within "main()"
@@ -548,7 +548,7 @@ void CwruPclUtils::initializePublishers() {
  * callback fnc: receives transmissions of Kinect data; if got_kinect_cloud is false, copy current transmission to internal variable
  * @param cloud [in] messages received from Kinect
  */
-void CwruPclUtils::kinectCB(const sensor_msgs::PointCloud2ConstPtr& cloud) {
+void DavinciPclUtils::kinectCB(const sensor_msgs::PointCloud2ConstPtr& cloud) {
     //cout<<"callback from kinect pointcloud pub"<<endl;
     // convert/copy the cloud only if desired
     if (!got_kinect_cloud_) {
@@ -580,7 +580,7 @@ void CwruPclUtils::kinectCB(const sensor_msgs::PointCloud2ConstPtr& cloud) {
 
 // this callback wakes up when a new "selected Points" message arrives
 
-void CwruPclUtils::selectCB(const sensor_msgs::PointCloud2ConstPtr& cloud) {
+void DavinciPclUtils::selectCB(const sensor_msgs::PointCloud2ConstPtr& cloud) {
     pcl::fromROSMsg(*cloud, *pclSelectedPoints_ptr_);
     
     //looks like selected points does NOT include color of points
@@ -605,22 +605,22 @@ void CwruPclUtils::selectCB(const sensor_msgs::PointCloud2ConstPtr& cloud) {
 
 
 // =============================================================
-Eigen::Vector3f CwruPclUtils::get_centroid(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr) {
+Eigen::Vector3f DavinciPclUtils::get_centroid(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr) {
     return compute_centroid(cloud_ptr);
 }
 
-Eigen::Vector3f CwruPclUtils::get_plane_normal(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr) {
+Eigen::Vector3f DavinciPclUtils::get_plane_normal(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr) {
     compute_plane_normal_and_major_axis(cloud_ptr);
     return plane_normal_;
 }
 
-Eigen::Vector3f CwruPclUtils::get_major_axis(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr) {
+Eigen::Vector3f DavinciPclUtils::get_major_axis(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr) {
     compute_plane_normal_and_major_axis(cloud_ptr);
     return major_axis_;
 }
 
 // code to determine major axis
-void CwruPclUtils::compute_plane_normal_and_major_axis(Eigen::MatrixXf points_mat) {
+void DavinciPclUtils::compute_plane_normal_and_major_axis(Eigen::MatrixXf points_mat) {
     ROS_INFO("starting computation of plane_normal_and_major_axis from data: ");
     int npts = points_mat.cols(); // number of points = number of columns in matrix; check the size
 
@@ -682,7 +682,7 @@ void CwruPclUtils::compute_plane_normal_and_major_axis(Eigen::MatrixXf points_ma
 }
 
 //get pts from cloud, pack the points into an Eigen::MatrixXf, then use above
-void CwruPclUtils::compute_plane_normal_and_major_axis(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr) {
+void DavinciPclUtils::compute_plane_normal_and_major_axis(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr) {
     Eigen::MatrixXf points_mat;
     Eigen::Vector3f cloud_pt;
     //populate points_mat from cloud data;
@@ -699,7 +699,7 @@ void CwruPclUtils::compute_plane_normal_and_major_axis(pcl::PointCloud<pcl::Poin
     compute_plane_normal_and_major_axis(points_mat);
 }
 
-void CwruPclUtils::offset_pcl_operation() {
+void DavinciPclUtils::offset_pcl_operation() {
     int npts = pclKinect_ptr_->points.size(); //number of points
     copy_cloud(pclKinect_ptr_,pclGenPurposeCloud_ptr_); //now have a copy of the selected points in gen-purpose object
     Eigen::Vector3f offset;
@@ -713,7 +713,7 @@ void CwruPclUtils::offset_pcl_operation() {
     This function is what I wrote to extract the plane that colanar with the selected patch.
     Wrote by Peng Xu.
 */
-void CwruPclUtils::extract_coplanar_pcl_operation(Eigen::Vector3f centroid) {
+void DavinciPclUtils::extract_coplanar_pcl_operation(Eigen::Vector3f centroid) {
     int npts = pclKinect_ptr_->points.size(); //number of points in kinect point cloud
     //pclGenPurposeCloud_ptr_->points.resize(npts);
     
@@ -736,13 +736,13 @@ void CwruPclUtils::extract_coplanar_pcl_operation(Eigen::Vector3f centroid) {
     pclGenPurposeCloud_ptr_->height = 1; 
 } 
 
-double CwruPclUtils::distance_between(Eigen::Vector3f pt1, Eigen::Vector3f pt2) {
+double DavinciPclUtils::distance_between(Eigen::Vector3f pt1, Eigen::Vector3f pt2) {
     Eigen::Vector3f pt = pt1 - pt2;
     double distance = pt(0)*pt(0) + pt(1)*pt(1) + pt(2)*pt(2);
     return distance;
 }
 
-void CwruPclUtils::print_points(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr) {
+void DavinciPclUtils::print_points(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr) {
     int npts = input_cloud_ptr->points.size();
     Eigen::Vector3f cloud_pt;
 
