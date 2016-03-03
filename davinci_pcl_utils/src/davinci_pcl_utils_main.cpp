@@ -22,11 +22,12 @@ int main(int argc, char** argv) {
     //set up a publisher to display clouds in rviz:
     ros::Publisher pubCloud = nh.advertise<sensor_msgs::PointCloud2> ("/pcl_cloud_display", 1);
     ros::Publisher thePoint = nh.advertise<geometry_msgs::Point> ("/thePoint", 1);
+    ros::Publisher the_plane_normal_pub = nh.advertise<geometry_msgs::Point> ("/the_plane_normal", 1);
 
     //pcl::PointCloud<pcl::PointXYZ> & outputCloud
     pcl::PointCloud<pcl::PointXYZ> display_cloud; // instantiate a pointcloud object, which will be used for display in rviz
     sensor_msgs::PointCloud2 pcl2_display_cloud; //(new sensor_msgs::PointCloud2); //corresponding data type for ROS message
-    geometry_msgs::Point theSelectedPoint;
+    geometry_msgs::Point theSelectedPoint, thePlaneNormal;
 
     Eigen::Vector3f centroid, plane_normal, major_axis;
     double plane_dist;
@@ -59,10 +60,6 @@ int main(int argc, char** argv) {
             theSelectedPoint.x = selected_points->points[0].x;
             theSelectedPoint.y = selected_points->points[0].y;
             theSelectedPoint.z = selected_points->points[0].z;
-            ros::Time begin = ros::Time::now();
-            while(ros::Time::now().toSec() - begin.toSec() < 0.5) {
-                thePoint.publish(theSelectedPoint);
-            }
 
             // ROS_INFO("Press ENTER to check plane_normal of the selected points.");
             // cin.get();
@@ -83,7 +80,19 @@ int main(int argc, char** argv) {
             major_axis = plane_normal;
             centroid = davinci_pcl_utils.get_centroid(genpurpose_cloud);
             plane_dist = plane_normal.dot(centroid);
-            ROS_INFO_STREAM(" normal: " << plane_normal.transpose() << "; dist = " << plane_dist);
+            ROS_INFO_STREAM("--------------------------normal: " << plane_normal.transpose() << "; dist = -------------------------" << plane_dist);
+
+            davinci_pcl_utils.fit_points_to_plane(genpurpose_cloud, plane_normal, plane_dist);
+            ROS_INFO_STREAM("++++++++++++++++++++++++++normal: " << plane_normal.transpose() << "; dist = ++++++++++++++++++++++++++" << plane_dist);
+
+            thePlaneNormal.x = plane_normal[0];
+            thePlaneNormal.y = plane_normal[1];
+            thePlaneNormal.z = plane_normal[2];
+            ros::Time begin = ros::Time::now();
+            while(ros::Time::now().toSec() - begin.toSec() < 0.5) {
+                thePoint.publish(theSelectedPoint);
+                the_plane_normal_pub.publish(thePlaneNormal);
+            }            
 
             davinci_pcl_utils.get_gen_purpose_cloud(display_cloud);
         }
