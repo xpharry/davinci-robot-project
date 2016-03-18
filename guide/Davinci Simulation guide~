@@ -1,0 +1,215 @@
+The simulated camera spec is defined in
+
+~/ros_ws/src/davinci_wsn/dvrk_model/model/wsn_both_psms.urdf.xacro 
+
+The distance of left and right cameras was orginally set to 0.01 (10mm). Later Su Lu found the distance should be 0.0058 (5.8mm)  
+
+So the positions of cameras are set as below 
+
+[-0.0029 0.0 0.5] for left
+
+ and
+
+[0.0029 0.0 0.5] for right
+
+They are 0.0058 (5.8mm) away (center to center)
+
+
+"IMPORTANCE"
+
+the original size of camera (box size) was set to (0.03 0.01 0.01), this needs to be fixed to meet new finding 
+
+however, when I shrinked the box size to (0.03 0.0058 0.0058), there are grey bars on rviz camera views. Later I found out the grey bars are the camera enclosures in camear views. After I resized the box to (0.02 0.0058 0.0058), the grey bars are disappeared.
+
+###################################################################################
+Simulated Camera Spec (refer to gazebo_ros_camera.cpp and http://docs.ros.org/api/sensor_msgs/html/msg/CameraInfo.html) 
+
+(this->CxPrime == 0)
+00288     this->CxPrime = ((double)this->width+1.0) /2.0;
+00289   if (this->Cx == 0)
+00290     this->Cx = ((double)this->width+1.0) /2.0;
+00291   if (this->Cy == 0)
+00292     this->Cy = ((double)this->height+1.0) /2.0;
+00293   if (this->focal_length == 0)
+00294     this->focal_length = ((double)this->width) / (2.0 *tan(this->myParent->GetHFOV().GetAsRadian()/2.0)); 
+
+00547   this->cameraInfoMsg.P[0] = this->focal_length;
+00548   this->cameraInfoMsg.P[1] = 0.0;
+00549   this->cameraInfoMsg.P[2] = this->Cx;
+00550   this->cameraInfoMsg.P[3] = -this->focal_length * this->hack_baseline;
+00551   this->cameraInfoMsg.P[4] = 0.0;
+00552   this->cameraInfoMsg.P[5] = this->focal_length;
+00553   this->cameraInfoMsg.P[6] = this->Cy;
+00554   this->cameraInfoMsg.P[7] = 0.0;
+00555   this->cameraInfoMsg.P[8] = 0.0;
+00556   this->cameraInfoMsg.P[9] = 0.0;
+00557   this->cameraInfoMsg.P[10] = 1.0;
+00558   this->cameraInfoMsg.P[11] = 0.0;
+00559   this->camera_info_pub_.publish(this->cameraInfoMsg);
+
+In wsn_both_psms.urdf.xacro
+
+hackBaseline is baseline of two camera: left 0, right -0.0058
+cameraName: davinci_endo/unsynced/left
+cameraInfoTopicName: camera_info
+
+ <camera name="left_camera">
+        <horizontal_fov>0.6975</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+
+ <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>0.0</updateRate>
+        <cameraName>davinci_endo/unsynced/left</cameraName>
+	<!-- Modified by DLC from original davinci/left to davinci_endo/unsynced/left for davinci_endo_sim.launch -->
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>davinci_endo</frameName>
+        <!--frameName>left_camera_link</frameName-->
+        <hackBaseline>0.0</hackBaseline>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+      </plugin>
+
+<plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>0.0</updateRate>
+        <cameraName>davinci_endo/unsynced/right</cameraName>
+	<!-- Modified by DLC from original davinci/right to davinci_endo/unsynced/right for davinci_endo_sim.launch -->
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>davinci_endo</frameName>
+        <hackBaseline>-0.0058</hackBaseline>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+
+Cx=Cprime(width+1)/2=320.5, Cy=Cprime=(height+1)/2=240.5
+focal length= width/(2.0 *tan(horizantal_fov/2.0))= 640/(2*tan(0.6975/2)=880.0576
+Tx=-focal length*hackbaseline=-880.0576*0.0058=5.1
+
+frame_id: davinci_endo
+height: 480
+width: 640
+distortion_model: plumb_bob
+
+distortion parameters
+D: [0.0, 0.0, 0.0, 0.0, 0.0]
+
+Intrinsic camera matrix
+    [fx  0 cx]
+K = [ 0 fy cy]
+    [ 0  0  1]
+
+K: [880.0575531441748, 0.0, 320.5]
+   [0.0, 880.0575531441748, 240.5]
+   [0.0, 0.0, 1.0]
+
+Rectification matrix
+R: [1.0, 0.0, 0.0]
+   [0.0, 1.0, 0.0]
+   [0.0, 0.0, 1.0]
+
+Projection/camera matrix
+    [fx'  0  cx' Tx]
+P = [ 0  fy' cy' Ty]
+    [ 0   0   1   0]
+
+P: [880.0575531441748, 0.0, 320.5, 5.1043338082362135]
+   [0.0, 880.0575531441748, 240.5, 0.0]
+   [0.0, 0.0, 1.0, 0.0]
+
+
+###############################################################################################
+
+Point could
+
+1. gedit ~/ros_ws/src/davinci_wsn/dvrk_model/davinci.world
+
+   choose samll_tissue and comment out small_checkerboard
+ 
+2. roslaunch dvrk_model wsn_davinci_gazebo.launch
+ 
+   this will bring out gazebo with davinci, small_tissue, ....
+
+3. open a terminal
+
+   rosrun davinci_traj_streamer davinci_traj_interpolator_as
+
+4. open a terminal 
+
+   cd ~/ros_ws/src/davinci_wsn/davinci_playfiles
+   
+   rosrun playfile_reader playfile_cartspace retract.csp
+
+   this will move two arms away from camera
+
+5. open a terminal
+  
+   roslaunch davinci_launch davinci_endo_sim.launch
+
+6. open a terminal
+   
+   roslaunch davinci_launch davinci_endo_view.launch
+
+   Pop out three images, /davinci_endo/left/image_rectified_color, /davinci_endo/right/image_rectified_color and
+   /davinci_endo/disparity
+
+7. open a terminal
+
+   rosrun rviz rviz
+
+   Global Options/fixed frame: type in /davinci_endo 
+   
+   Add PointCloud2 and set topic to /davinci_endo/points2
+
+8. open a terminal
+
+   rosrun rqt_reconfigure rqt_reconfigure
+   
+   and adjust parameters to get better disparity map
+
+
+Camera Calibration
+
+
+1. gedit ~/ros_ws/src/davinci_wsn/dvrk_model/davinci.world
+
+   choose samll_checkerboard and comment out small_tissue
+ 
+2. roslaunch dvrk_model wsn_davinci_gazebo.launch
+ 
+   this will bring out gazebo with davinci, small_checkerboard, ....
+
+3. open a terminal
+
+   rosrun davinci_traj_streamer davinci_traj_interpolator_as
+
+4. open a terminal 
+
+   cd ~/ros_ws/src/davinci_wsn/davinci_playfiles
+   
+   rosrun playfile_reader playfile_cartspace retract.csp
+
+   this will move two arms away from camera
+
+5. open a terminal
+
+rosrun camera_calibration cameracalibrator.py --size 7x6 --square 0.010 --approximate=0.1 right:=/davinci_endo/unsynced/right/image_raw left:=/davinci_endo/unsynced/left/image_raw right_camera:=/davinci_endo/unsynced/right left_camera:=/davinci_endo/unsynced/left
+
+this will bring out calibration gue
+
+6. Select samll_chaeckerboard on gazebo and move it X,Y (horizantal in camera views), Z (vetical in camera view for size), then rotatae to get skew. 
+
+
+
+

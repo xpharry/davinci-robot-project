@@ -15,6 +15,7 @@ pclTransformedSelectedPoints_ptr_(new PointCloud<pcl::PointXYZ>),pclGenPurposeCl
     initializePublishers();
     got_kinect_cloud_ = false;
     got_selected_points_ = false;
+    got_clicked_point_ = false;
 }
 
 void DavinciPclUtils::fit_points_to_plane(Eigen::MatrixXf points_mat, Eigen::Vector3f &plane_normal, double &plane_dist) {
@@ -375,7 +376,6 @@ void DavinciPclUtils::find_indices_color_match(vector<int> &input_indices,
         }
     }   
     ROS_INFO("found %d color-match points from indexed set",npts_matching);
-    
 } 
 
 //special case of above for transformed Kinect pointcloud:
@@ -532,6 +532,9 @@ void DavinciPclUtils::initializeSubscribers() {
 
     // subscribe to "selected_points", which is published by Rviz tool
     selected_points_subscriber_ = nh_.subscribe<sensor_msgs::PointCloud2> ("/selected_points", 1, &DavinciPclUtils::selectCB, this);
+
+    // geometry_msgs/PointStamped
+    clicked_point_subscriber_ = nh_.subscribe("/clicked_point", 1, &DavinciPclUtils::clickCB, this);
 }
 
 //member helper function to set up publishers;
@@ -601,6 +604,17 @@ void DavinciPclUtils::selectCB(const sensor_msgs::PointCloud2ConstPtr& cloud) {
     ROS_INFO("done w/ selected-points callback");
 
     got_selected_points_ = true;
+}
+
+
+// this callback wakes up when a new "selected Points" message arrives
+
+void DavinciPclUtils::clickCB(const geometry_msgs::PointStamped& point) {
+    clickedPoint_ = point;
+    
+    ROS_INFO("done w/ click a point callback");
+
+    got_clicked_point_ = true;
 }
 
 

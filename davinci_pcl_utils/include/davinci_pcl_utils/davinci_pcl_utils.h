@@ -86,9 +86,11 @@ public:
     void transform_cloud(Eigen::Affine3f A,pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr, 
         pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud_ptr);    
     void reset_got_kinect_cloud() {got_kinect_cloud_= false;};
-    void reset_got_selected_points() {got_selected_points_= false;};    
+    void reset_got_selected_points() {got_selected_points_= false;};
+    void reset_got_clicked_point() {got_clicked_point_= false;};  
     bool got_kinect_cloud() { return got_kinect_cloud_; };
     bool got_selected_points() {return got_selected_points_;};
+    bool got_clicked_point() {return got_clicked_point_;};
     void save_kinect_snapshot() {    pcl::io::savePCDFileASCII ("kinect_snapshot.pcd", *pclKinect_ptr_);};
     //alternative "save" fnc: save as a colored pointcloud
     void save_kinect_clr_snapshot() {pcl::io::savePCDFileASCII ("kinect_clr_snapshot.pcd", *pclKinect_clr_ptr_);};
@@ -127,6 +129,7 @@ public:
     pcl::PointCloud<pcl::PointXYZ>::Ptr get_all_points() {return pclKinect_ptr_;}; // obtain selected points
     pcl::PointCloud<pcl::PointXYZ>::Ptr get_selected_points() {return pclSelectedPoints_ptr_;}; // obtain selected points
     pcl::PointCloud<pcl::PointXYZ>::Ptr get_genpurpose_points() {return pclGenPurposeCloud_ptr_;}; // obtain selected points
+    geometry_msgs::PointStamped get_clicked_point() {return clickedPoint_;};
     void offset_pcl_operation();
     void extract_coplanar_pcl_operation(Eigen::Vector3f centroid);
     void print_points(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr);
@@ -136,7 +139,7 @@ private:
     // some objects to support subscriber, service, and publisher
     ros::Subscriber pointcloud_subscriber_; //use this to subscribe to a pointcloud topic
     ros::Subscriber selected_points_subscriber_; // this to subscribe to "selectedPoints" topic from Rviz
-
+    ros::Subscriber clicked_point_subscriber_;
     
     //ros::ServiceServer minimal_service_; //maybe want these later
     ros::Publisher  pointcloud_publisher_;
@@ -151,9 +154,11 @@ private:
     pcl::PointCloud<pcl::PointXYZ>::Ptr pclSelectedPoints_ptr_;
     pcl::PointCloud<pcl::PointXYZ>::Ptr pclTransformedSelectedPoints_ptr_;
     pcl::PointCloud<pcl::PointXYZ>::Ptr pclGenPurposeCloud_ptr_;
+    geometry_msgs::PointStamped clickedPoint_;
     
     bool got_kinect_cloud_;
     bool got_selected_points_;
+    bool got_clicked_point_;
     // member methods as well:
     void initializeSubscribers(); // we will define some helper methods to encapsulate the gory details of initializing subscribers, publishers and services
     void initializePublishers();
@@ -161,6 +166,7 @@ private:
     
     void kinectCB(const sensor_msgs::PointCloud2ConstPtr& cloud); //prototype for callback fnc
     void selectCB(const sensor_msgs::PointCloud2ConstPtr& cloud); // callback for selected points  
+    void clickCB(const geometry_msgs::PointStamped& point);
 
     Eigen::Vector3f plane_normal_, major_axis_, centroid_;
     Eigen::Vector3d avg_color_;
