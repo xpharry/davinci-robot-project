@@ -100,6 +100,7 @@ int main(int argc, char** argv) {
             ROS_INFO("process selected-points!");
             davinci_pcl_utils.reset_got_selected_points();   // reset the selected-points trigger
             final_markers.markers.clear();
+            std::cout<<"*********** volume of markers now: "<<final_markers.markers.size()<<std::endl;
             final_id = 0;
             // final = null;
 
@@ -136,7 +137,7 @@ int main(int argc, char** argv) {
 
             theSelectedPoint.x = centroid[0];
             theSelectedPoint.y = centroid[1];
-            theSelectedPoint.z = centroid[2];
+            theSelectedPoint.z = centroid[2]-0.002;
 
             thePlaneNormal.x = plane_normal[0];
             thePlaneNormal.y = plane_normal[1];
@@ -217,7 +218,7 @@ int main(int argc, char** argv) {
                     final.pose.position.z = marker.pose.position.z;
                     marker.scale.x = 0.0015;
                     marker.scale.y = 0.0015;
-                    marker.scale.z = 0.0015;
+                    marker.scale.z = 0.002;
                     final.color.a = 1.0; // Don't forget to set the alpha!
                     final.color.r = 1.0;
                     final.color.g = 0.0;
