@@ -1,6 +1,7 @@
 #include <davinci_pcl_utils/davinci_pcl_utils.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <geometry_msgs/Polygon.h>
 #include <math.h>
 #include <limits>
 
@@ -38,6 +39,37 @@ void exitPointsCB(const geometry_msgs::Point& point) {
     final_markers.markers.push_back(marker);  
 }
 
+void exitPointArrayCB(const geometry_msgs::Polygon& point_array) {
+    ROS_INFO("exitPointArrayCB ..............");
+    final_markers.markers.clear();
+
+    int num = point_array.points.size();
+    for(int i = 0; i < num; i++) {
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = "davinci_endo";
+        marker.header.stamp = ros::Time();
+        //marker.ns = "my_namespace";
+        marker.id = 100+i;
+        marker.type = visualization_msgs::Marker::CYLINDER;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.position.x = point_array.points[i].x;
+        marker.pose.position.y = point_array.points[i].y;
+        marker.pose.position.z = point_array.points[i].z;
+        marker.pose.orientation.x = 0.0;
+        marker.pose.orientation.y = 0.0;
+        marker.pose.orientation.z = 0.0;
+        marker.pose.orientation.w = 1.0;
+        marker.scale.x = 0.001;
+        marker.scale.y = 0.001;
+        marker.scale.z = 0.0001;
+        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.r = 1.0;
+        marker.color.g = 0.0;
+        marker.color.b = 1.0;
+        final_markers.markers.push_back(marker);      
+    }     
+}
+
 int main(int argc, char** argv) {
     ros::init(argc, argv, "davinci_pcl_utils_main"); //node name
     ros::NodeHandle nh;
@@ -64,7 +96,8 @@ int main(int argc, char** argv) {
     ros::Publisher finalPointPub = nh.advertise<visualization_msgs::Marker>("/final_point_marker", 0);
     ros::Publisher finalExitPointsPub = nh.advertise<visualization_msgs::MarkerArray>("/final_exit_points", 0);
 
-    ros::Subscriber receiveExitPoints = nh.subscribe("/exit_points", 1, exitPointsCB);
+    // ros::Subscriber receiveExitPoints = nh.subscribe("/exit_points", 1, exitPointsCB);
+    ros::Subscriber receiveExitPointArray = nh.subscribe("/exit_point_array", 1, exitPointArrayCB);
 
     double radius = 0.005;
 
@@ -137,16 +170,18 @@ int main(int argc, char** argv) {
 
             theSelectedPoint.x = centroid[0];
             theSelectedPoint.y = centroid[1];
-            theSelectedPoint.z = centroid[2]-0.002;
+            theSelectedPoint.z = centroid[2] - 0.001;
 
             thePlaneNormal.x = plane_normal[0];
             thePlaneNormal.y = plane_normal[1];
             thePlaneNormal.z = plane_normal[2];          
 
             davinci_pcl_utils.get_gen_purpose_cloud(display_cloud);
+
+            thePoint.publish(theSelectedPoint);
         }
 
-        thePoint.publish(theSelectedPoint);
+        // thePoint.publish(theSelectedPoint);
         the_plane_normal_pub.publish(thePlaneNormal);
 
         geometry_msgs::Point entryPoint = theSelectedPoint;
@@ -195,7 +230,7 @@ int main(int argc, char** argv) {
         entryPointPub.publish(marker);
         
         // publish the exit points
-        exitPointsPub.publish(markers);
+        // exitPointsPub.publish(markers);
 
         if(davinci_pcl_utils.got_clicked_point()) {
             ROS_INFO("process select an exit point!");
@@ -207,8 +242,8 @@ int main(int argc, char** argv) {
 
             double closest = DBL_MAX;
             final = markers.markers[0];
-            for(int i = 0; i < numOfMarkers; i++) {
-                marker = markers.markers[i];
+            for(int i = 0; i < final_markers.markers.size(); i++) {
+                marker = final_markers.markers[i];
                 double dist = sqrt( pow(marker.pose.position.x - clicked_point.x, 2) + pow(marker.pose.position.y - clicked_point.y, 2) );
                 if(dist < closest) {
                     closest = dist;
@@ -220,14 +255,15 @@ int main(int argc, char** argv) {
                     marker.scale.y = 0.0015;
                     marker.scale.z = 0.002;
                     final.color.a = 1.0; // Don't forget to set the alpha!
-                    final.color.r = 1.0;
+                    final.color.r = 0.0;
                     final.color.g = 0.0;
                     final.color.b = 1.0;
                 }
             }
-            // finalPointPub.publish(final);     
+            final_markers.markers.clear();
         }
         finalPointPub.publish(final);
+
         finalExitPointsPub.publish(final_markers);
 
         ros::Duration(0.5).sleep(); // sleep for half a second
