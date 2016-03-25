@@ -241,19 +241,19 @@ int main(int argc, char** argv) {
             geometry_msgs::Point clicked_point = davinci_pcl_utils.get_clicked_point().point;
 
             double closest = DBL_MAX;
-            final = markers.markers[0];
+            final = final_markers.markers[0];
             for(int i = 0; i < final_markers.markers.size(); i++) {
                 marker = final_markers.markers[i];
                 double dist = sqrt( pow(marker.pose.position.x - clicked_point.x, 2) + pow(marker.pose.position.y - clicked_point.y, 2) );
                 if(dist < closest) {
                     closest = dist;
-                    marker.type = visualization_msgs::Marker::SPHERE;
+                    final.type = visualization_msgs::Marker::SPHERE;
                     final.pose.position.x = marker.pose.position.x;
                     final.pose.position.y = marker.pose.position.y;
                     final.pose.position.z = marker.pose.position.z;
-                    marker.scale.x = 0.0015;
-                    marker.scale.y = 0.0015;
-                    marker.scale.z = 0.002;
+                    final.scale.x = 0.0015;
+                    final.scale.y = 0.0015;
+                    final.scale.z = 0.002;
                     final.color.a = 1.0; // Don't forget to set the alpha!
                     final.color.r = 0.0;
                     final.color.g = 0.0;
