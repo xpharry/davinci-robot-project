@@ -11,7 +11,7 @@ rosrun davinci_kinematics test_pointer        (this is the pointer test node)
 
 	Then, you can test points manually, e.g. with:
 
-		rostopic pub  /thePoint geometry_msgs/Point  '{x: -0.1, y: 0.0, z: 0.1}'
+		rostopic pub  /thePoint geometry_msgs/Point  '{x: 0, y: 0.0, z: 0.12}'
    
 	Can check the result with:
 

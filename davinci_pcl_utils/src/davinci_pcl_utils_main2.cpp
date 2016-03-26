@@ -30,7 +30,7 @@ void exitPointsCB(const geometry_msgs::Point& point) {
     marker.pose.orientation.w = 1.0;
     marker.scale.x = 0.001;
     marker.scale.y = 0.001;
-    marker.scale.z = 0.0001;
+    marker.scale.z = 0.0002;
     marker.color.a = 1.0; // Don't forget to set the alpha!
     marker.color.r = 1.0;
     marker.color.g = 0.0;
@@ -61,7 +61,7 @@ void exitPointArrayCB(const geometry_msgs::Polygon& point_array) {
         marker.pose.orientation.w = 1.0;
         marker.scale.x = 0.001;
         marker.scale.y = 0.001;
-        marker.scale.z = 0.0001;
+        marker.scale.z = 0.0002;
         marker.color.a = 1.0; // Don't forget to set the alpha!
         marker.color.r = 1.0;
         marker.color.g = 0.0;
@@ -91,6 +91,7 @@ int main(int argc, char** argv) {
     ros::Publisher pubCloud = nh.advertise<sensor_msgs::PointCloud2> ("/pcl_cloud_display", 1);
     ros::Publisher thePoint = nh.advertise<geometry_msgs::Point> ("/thePoint", 1);
     ros::Publisher the_plane_normal_pub = nh.advertise<geometry_msgs::Point> ("/the_plane_normal", 1);
+
     ros::Publisher entryPointPub = nh.advertise<visualization_msgs::Marker>("/entry_point_marker", 0);
     ros::Publisher exitPointsPub = nh.advertise<visualization_msgs::MarkerArray>("/exit_points_markers", 0);
     ros::Publisher finalPointPub = nh.advertise<visualization_msgs::Marker>("/final_point_marker", 0);
@@ -170,7 +171,7 @@ int main(int argc, char** argv) {
 
             theSelectedPoint.x = centroid[0];
             theSelectedPoint.y = centroid[1];
-            theSelectedPoint.z = centroid[2] - 0.001;
+            theSelectedPoint.z = centroid[2];
 
             thePlaneNormal.x = plane_normal[0];
             thePlaneNormal.y = plane_normal[1];
@@ -210,7 +211,7 @@ int main(int argc, char** argv) {
             marker.pose.orientation.w = 1.0;
             marker.scale.x = 0.001;
             marker.scale.y = 0.001;
-            marker.scale.z = 0.0001;
+            marker.scale.z = 0.0002;
             marker.color.a = 1.0; // Don't forget to set the alpha!
             marker.color.r = 0.0;
             marker.color.g = 1.0;
@@ -242,22 +243,29 @@ int main(int argc, char** argv) {
 
             double closest = DBL_MAX;
             final = final_markers.markers[0];
+            final.type = visualization_msgs::Marker::CYLINDER;
+            //final.header.frame_id = "davinci_endo";
+            final.scale.x = 0.0015;
+            final.scale.y = 0.0015;
+            final.scale.z = 0.0002;
+            final.color.a = 1.0; // Don't forget to set the alpha!
+            final.color.r = 0.0;
+            final.color.g = 0.0;
+            final.color.b = 1.0;
+            
             for(int i = 0; i < final_markers.markers.size(); i++) {
                 marker = final_markers.markers[i];
+                ROS_INFO("final_markers[%d] x: %f, y: %f, z: %f", i, marker.pose.position.x, marker.pose.position.y, marker.pose.position.z);
+                ROS_INFO("got_clicked_point x: %f, y: %f, z: %f", clicked_point.x, clicked_point.y, clicked_point.z);
                 double dist = sqrt( pow(marker.pose.position.x - clicked_point.x, 2) + pow(marker.pose.position.y - clicked_point.y, 2) );
                 if(dist < closest) {
+                    ROS_INFO("closest ...");
+                    ROS_INFO("dist = %f", dist);
+                    ROS_INFO("closest = %f", closest);
                     closest = dist;
-                    final.type = visualization_msgs::Marker::SPHERE;
                     final.pose.position.x = marker.pose.position.x;
                     final.pose.position.y = marker.pose.position.y;
                     final.pose.position.z = marker.pose.position.z;
-                    final.scale.x = 0.0015;
-                    final.scale.y = 0.0015;
-                    final.scale.z = 0.002;
-                    final.color.a = 1.0; // Don't forget to set the alpha!
-                    final.color.r = 0.0;
-                    final.color.g = 0.0;
-                    final.color.b = 1.0;
                 }
             }
             final_markers.markers.clear();
@@ -266,7 +274,7 @@ int main(int argc, char** argv) {
 
         finalExitPointsPub.publish(final_markers);
 
-        ros::Duration(0.5).sleep(); // sleep for half a second
+        //ros::Duration(0.5).sleep(); // sleep for half a second
         ros::spinOnce();
     }
     ROS_INFO("my work here is done!");

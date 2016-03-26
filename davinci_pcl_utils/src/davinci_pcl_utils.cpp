@@ -228,6 +228,21 @@ void DavinciPclUtils::transform_selected_points_cloud(Eigen::Affine3f A) {
     transform_cloud(A, pclSelectedPoints_ptr_, pclTransformedSelectedPoints_ptr_);
 }
 
+void DavinciPclUtils::transform_clicked_point(Eigen::Affine3f A, geometry_msgs::Point &input, geometry_msgs::Point &output) {
+
+    pcl::PointXYZ new_input, new_output;
+
+    new_input.x = input.x;
+    new_input.y = input.y;
+    new_input.z = input.z;
+
+    transform_point(A, new_input, new_output);
+
+    output.x = new_output.x;
+    output.y = new_output.y;
+    output.z = new_output.z;
+}
+
 //    void get_transformed_selected_points(pcl::PointCloud<pcl::PointXYZ> & outputCloud );
 
 void DavinciPclUtils::get_transformed_selected_points(pcl::PointCloud<pcl::PointXYZ> & outputCloud ) {
@@ -518,6 +533,11 @@ void DavinciPclUtils::transform_cloud(Eigen::Affine3f A, pcl::PointCloud<pcl::Po
     for (int i = 0; i < npts; ++i) {
         output_cloud_ptr->points[i].getVector3fMap() = A * input_cloud_ptr->points[i].getVector3fMap();
     }
+}
+
+void DavinciPclUtils::transform_point(Eigen::Affine3f A, pcl::PointXYZ &input, pcl::PointXYZ &output) {
+    //somewhat odd notation: getVector3fMap() reading OR WRITING points from/to a pointcloud, with conversions to/from Eigen
+    output.getVector3fMap() = A * input.getVector3fMap();
 }
 
 //member helper function to set up subscribers;

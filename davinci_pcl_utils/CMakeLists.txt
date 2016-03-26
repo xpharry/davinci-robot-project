@@ -25,9 +25,11 @@ cs_add_library(davinci_pcl_utils src/davinci_pcl_utils.cpp)
 # target_link_library(example my_lib)
 cs_add_executable(davinci_pcl_utils_main src/davinci_pcl_utils_main.cpp)
 cs_add_executable(davinci_pcl_utils_main2 src/davinci_pcl_utils_main2.cpp)
+cs_add_executable(davinci_pcl_utils_main3 src/davinci_pcl_utils_main3.cpp)
 
 target_link_libraries(davinci_pcl_utils_main davinci_pcl_utils ${catkin_LIBRARIES})
 target_link_libraries(davinci_pcl_utils_main2 davinci_pcl_utils ${catkin_LIBRARIES})
+target_link_libraries(davinci_pcl_utils_main3 davinci_pcl_utils ${catkin_LIBRARIES})
 
 cs_install()
 cs_export()

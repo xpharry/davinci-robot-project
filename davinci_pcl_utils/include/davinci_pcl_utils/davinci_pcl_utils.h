@@ -83,8 +83,10 @@ public:
     Eigen::Affine3f transformTFToEigen(const tf::Transform &t);
     void transform_kinect_cloud(Eigen::Affine3f A);
     void transform_selected_points_cloud(Eigen::Affine3f A);
+    void transform_clicked_point(Eigen::Affine3f A, geometry_msgs::Point &input, geometry_msgs::Point &output);
     void transform_cloud(Eigen::Affine3f A,pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ptr, 
-        pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud_ptr);    
+        pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud_ptr);
+    void transform_point(Eigen::Affine3f A, pcl::PointXYZ &input, pcl::PointXYZ &output);
     void reset_got_kinect_cloud() {got_kinect_cloud_= false;};
     void reset_got_selected_points() {got_selected_points_= false;};
     void reset_got_clicked_point() {got_clicked_point_= false;};  
