@@ -10,34 +10,6 @@ using namespace std;
 const double PI = 3.14;
 
 visualization_msgs::MarkerArray final_markers;
-int final_id = 0;
-
-void exitPointsCB(const geometry_msgs::Point& point) {
-    ROS_INFO("exitPointsCB ..............");
-    visualization_msgs::Marker marker;
-    marker.header.frame_id = "davinci_endo";
-    marker.header.stamp = ros::Time();
-    //marker.ns = "my_namespace";
-    marker.id = final_id++;
-    marker.type = visualization_msgs::Marker::CYLINDER;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.pose.position.x = point.x;
-    marker.pose.position.y = point.y;
-    marker.pose.position.z = point.z;
-    marker.pose.orientation.x = 0.0;
-    marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = 0.0;
-    marker.pose.orientation.w = 1.0;
-    marker.scale.x = 0.001;
-    marker.scale.y = 0.001;
-    marker.scale.z = 0.0005;
-    marker.color.a = 1.0; // Don't forget to set the alpha!
-    marker.color.r = 1.0;
-    marker.color.g = 0.0;
-    marker.color.b = 1.0;
-
-    final_markers.markers.push_back(marker);  
-}
 
 void exitPointArrayCB(const geometry_msgs::Polygon& point_array) {
     ROS_INFO("exitPointArrayCB ..............");
@@ -59,8 +31,8 @@ void exitPointArrayCB(const geometry_msgs::Polygon& point_array) {
         marker.pose.orientation.y = 0.0;
         marker.pose.orientation.z = 0.0;
         marker.pose.orientation.w = 1.0;
-        marker.scale.x = 0.001;
-        marker.scale.y = 0.001;
+        marker.scale.x = 0.002;
+        marker.scale.y = 0.002;
         marker.scale.z = 0.0005;
         marker.color.a = 1.0; // Don't forget to set the alpha!
         marker.color.r = 1.0;
@@ -93,7 +65,7 @@ int main(int argc, char** argv) {
     ros::Publisher the_plane_normal_pub = nh.advertise<geometry_msgs::Point> ("/the_plane_normal", 1);
 
     ros::Publisher entryPointPub = nh.advertise<visualization_msgs::Marker>("/entry_point_marker", 0);
-    ros::Publisher exitPointsPub = nh.advertise<visualization_msgs::MarkerArray>("/exit_points_markers", 0);
+    // ros::Publisher exitPointsPub = nh.advertise<visualization_msgs::MarkerArray>("/exit_points_markers", 0);
     ros::Publisher finalPointPub = nh.advertise<visualization_msgs::Marker>("/final_point_marker", 0);
     ros::Publisher finalExitPointsPub = nh.advertise<visualization_msgs::MarkerArray>("/final_exit_points", 0);
 
@@ -113,10 +85,10 @@ int main(int argc, char** argv) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr all_points = davinci_pcl_utils.get_all_points();
     pcl::PointCloud<pcl::PointXYZ> cloud;
     //pcl::PointCloud<pcl::PointXYZ> cloud;
-    cloud.push_back (pcl::PointXYZ (-1, -1, 0)); 
-    cloud.push_back (pcl::PointXYZ (-1, 1, 0)); 
-    cloud.push_back (pcl::PointXYZ (1, -1, 0)); 
-    cloud.push_back (pcl::PointXYZ (1, 1, 0)); 
+    cloud.push_back(pcl::PointXYZ (-1, -1, 0)); 
+    cloud.push_back(pcl::PointXYZ (-1, 1, 0)); 
+    cloud.push_back(pcl::PointXYZ (1, -1, 0)); 
+    cloud.push_back(pcl::PointXYZ (1, 1, 0)); 
     pcl::PointCloud<pcl::PointXYZ>::Ptr test_cloud(&cloud);
 
     visualization_msgs::Marker final;
@@ -135,8 +107,6 @@ int main(int argc, char** argv) {
             davinci_pcl_utils.reset_got_selected_points();   // reset the selected-points trigger
             final_markers.markers.clear();
             std::cout<<"*********** volume of markers now: "<<final_markers.markers.size()<<std::endl;
-            final_id = 0;
-            // final = null;
 
             pcl::PointCloud<pcl::PointXYZ>::Ptr selected_points = davinci_pcl_utils.get_selected_points();
             davinci_pcl_utils.print_points(selected_points);
@@ -209,8 +179,8 @@ int main(int argc, char** argv) {
             marker.pose.orientation.y = 0.0;
             marker.pose.orientation.z = 0.0;
             marker.pose.orientation.w = 1.0;
-            marker.scale.x = 0.001;
-            marker.scale.y = 0.001;
+            marker.scale.x = 0.002;
+            marker.scale.y = 0.002;
             marker.scale.z = 0.0005;
             marker.color.a = 1.0; // Don't forget to set the alpha!
             marker.color.r = 0.0;
@@ -243,70 +213,75 @@ int main(int argc, char** argv) {
             geometry_msgs::Point transformed_clicked_point;
             ROS_INFO("got_clicked_point x: %f, y: %f, z: %f", clicked_point.x, clicked_point.y, clicked_point.z);
 
-            // ******************************************************************************
-            // tf
-            tf::StampedTransform tf_sensor_frame_to_torso_frame; //use this to transform sensor frame to torso frame
-            tf::TransformListener tf_listener; //start a transform listener
+            // // ******************************************************************************
+            // // tf
+            // tf::StampedTransform tf_sensor_frame_to_torso_frame; //use this to transform sensor frame to torso frame
+            // tf::TransformListener tf_listener; //start a transform listener
 
-            //let's warm up the tf_listener, to make sure it get's all the transforms it needs to avoid crashing:
-            bool tferr = true;
-            ROS_INFO("waiting for tf between world and davinci_endo...");
-            while (tferr) {
-                tferr = false;
-            try {
-                    //The direction of the transform returned will be from the target_frame to the source_frame. 
-                    //Which if applied to data, will transform data in the source_frame into the target_frame. See tf/CoordinateFrameConventions#Transform_Direction
-                    tf_listener.lookupTransform("world", marker.header.frame_id, ros::Time(0), tf_sensor_frame_to_torso_frame);
-                } catch (tf::TransformException &exception) {
-                    ROS_ERROR("%s", exception.what());
-                    tferr = true;
-                    ros::Duration(0.5).sleep(); // sleep for half a second
-                    ros::spinOnce();
-                }
-            }
-            ROS_INFO("tf is good"); //tf-listener found a complete chain from sensor to world; ready to roll
-            //convert the tf to an Eigen::Affine:
-            Eigen::Affine3f A_sensor_wrt_torso;
-            A_sensor_wrt_torso = davinci_pcl_utils.transformTFToEigen(tf_sensor_frame_to_torso_frame);
-            //transform the kinect data to the torso frame;
-            // we don't need to have it returned; cwru_pcl_utils can own it as a member var
-            davinci_pcl_utils.transform_clicked_point(A_sensor_wrt_torso, clicked_point, transformed_clicked_point);
-            clicked_point = transformed_clicked_point;
-            // ******************************************************************************
+            // //let's warm up the tf_listener, to make sure it get's all the transforms it needs to avoid crashing:
+            // bool tferr = true;
+            // ROS_INFO("waiting for tf between world and davinci_endo...");
+            // while (tferr) {
+            //     tferr = false;
+            // try {
+            //         //The direction of the transform returned will be from the target_frame to the source_frame. 
+            //         //Which if applied to data, will transform data in the source_frame into the target_frame. See tf/CoordinateFrameConventions#Transform_Direction
+            //         tf_listener.lookupTransform("world", marker.header.frame_id, ros::Time(0), tf_sensor_frame_to_torso_frame);
+            //     } catch (tf::TransformException &exception) {
+            //         ROS_ERROR("%s", exception.what());
+            //         tferr = true;
+            //         ros::Duration(0.5).sleep(); // sleep for half a second
+            //         ros::spinOnce();
+            //     }
+            // }
+            // ROS_INFO("tf is good"); //tf-listener found a complete chain from sensor to world; ready to roll
+            // //convert the tf to an Eigen::Affine:
+            // Eigen::Affine3f A_sensor_wrt_torso;
+            // A_sensor_wrt_torso = davinci_pcl_utils.transformTFToEigen(tf_sensor_frame_to_torso_frame);
+            // //transform the kinect data to the torso frame;
+            // // we don't need to have it returned; cwru_pcl_utils can own it as a member var
+            // davinci_pcl_utils.transform_clicked_point(A_sensor_wrt_torso, clicked_point, transformed_clicked_point);
+            // // clicked_point = transformed_clicked_point;
+            // // ******************************************************************************
 
             double closest = DBL_MAX;
-            final = final_markers.markers[0];
+            // final = final_markers.markers[0];
             final.type = visualization_msgs::Marker::CYLINDER;
-            //final.header.frame_id = "davinci_endo";
-            final.scale.x = 0.0015;
-            final.scale.y = 0.0015;
-            final.scale.z = 0.0005;
+            final.header.frame_id = "world";
+            final.scale.x = 0.002;
+            final.scale.y = 0.002;
+            final.scale.z = 0.0006;
             final.color.a = 1.0; // Don't forget to set the alpha!
             final.color.r = 0.0;
             final.color.g = 0.0;
             final.color.b = 1.0;
             
-            for(int i = 0; i < final_markers.markers.size(); i++) {
-                marker = final_markers.markers[i];
-                ROS_INFO("final_markers[%d] x: %f, y: %f, z: %f", i, marker.pose.position.x, marker.pose.position.y, marker.pose.position.z);
-                ROS_INFO("got_clicked_point x: %f, y: %f, z: %f", clicked_point.x, clicked_point.y, clicked_point.z);
-                double dist = sqrt( pow(marker.pose.position.x - clicked_point.x + 0.0048052, 2) + pow(marker.pose.position.y - clicked_point.y + 0.00157335, 2) );
-                if(dist < closest) {
-                    ROS_INFO("closest ...");
-                    ROS_INFO("dist = %f", dist);
-                    ROS_INFO("closest = %f", closest);
-                    closest = dist;
-                    final.pose.position.x = marker.pose.position.x;
-                    final.pose.position.y = marker.pose.position.y;
-                    final.pose.position.z = marker.pose.position.z;
+            // for(int i = 0; i < final_markers.markers.size(); i++) {
+            //     marker = final_markers.markers[i];
+            //     ROS_INFO("final_markers[%d] x: %f, y: %f, z: %f", i, marker.pose.position.x, marker.pose.position.y, marker.pose.position.z);
+            //     ROS_INFO("got_clicked_point x: %f, y: %f, z: %f", clicked_point.x, clicked_point.y, clicked_point.z);
+            //     double dist = sqrt( pow(marker.pose.position.x - clicked_point.x + 0.0048052, 2) + pow(marker.pose.position.y - clicked_point.y + 0.00157335, 2) );
+            //     if(dist < closest) {
+            //         ROS_INFO("closest ...");
+            //         ROS_INFO("dist = %f", dist);
+            //         ROS_INFO("closest = %f", closest);
+            //         closest = dist;
+            //         final.pose.position.x = marker.pose.position.x;
+            //         final.pose.position.y = marker.pose.position.y;
+            //         final.pose.position.z = marker.pose.position.z;
+            //     }
+            // }
+
+            final.pose.position.x = clicked_point.x;
+            final.pose.position.y = clicked_point.y;
+            final.pose.position.z = clicked_point.z;
+
+            // final_markers.markers.clear();
+            if(!final_markers.markers.empty()) {
+                for(int i = 0; i < final_markers.markers.size(); i++) {
+                    final_markers.markers[i].color.a = 0.0;
                 }
             }
-
-            // final.pose.position.x = clicked_point.x - 0.0048052;
-            // final.pose.position.y = clicked_point.y - 0.00157335;
-            // final.pose.position.z = clicked_point.z;
-
-            final_markers.markers.clear();
         }
         finalPointPub.publish(final);
 
