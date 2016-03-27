@@ -60,14 +60,14 @@ int main(int argc, char** argv) {
 
 
     //set up a publisher to display clouds in rviz:
-    ros::Publisher pubCloud = nh.advertise<sensor_msgs::PointCloud2> ("/pcl_cloud_display", 1);
     ros::Publisher thePoint = nh.advertise<geometry_msgs::Point> ("/thePoint", 1);
+    ros::Publisher sendExitPointArray = nh.advertise<geometry_msgs::Polygon>("/entrance_and_exit_pts", 1);
     ros::Publisher the_plane_normal_pub = nh.advertise<geometry_msgs::Point> ("/the_plane_normal", 1);
 
     ros::Publisher entryPointPub = nh.advertise<visualization_msgs::Marker>("/entry_point_marker", 0);
     // ros::Publisher exitPointsPub = nh.advertise<visualization_msgs::MarkerArray>("/exit_points_markers", 0);
     ros::Publisher finalPointPub = nh.advertise<visualization_msgs::Marker>("/final_point_marker", 0);
-    ros::Publisher finalExitPointsPub = nh.advertise<visualization_msgs::MarkerArray>("/final_exit_points", 0);
+    ros::Publisher finalExitPointsPub = nh.advertise<visualization_msgs::MarkerArray>("/possible_exit_points", 0);
 
     // ros::Subscriber receiveExitPoints = nh.subscribe("/exit_points", 1, exitPointsCB);
     ros::Subscriber receiveExitPointArray = nh.subscribe("/exit_point_array", 1, exitPointArrayCB);
@@ -282,9 +282,18 @@ int main(int argc, char** argv) {
                     final_markers.markers[i].color.a = 0.0;
                 }
             }
+
+            geometry_msgs::Polygon to_send_point_array;
+            to_send_point_array.points.resize(2);
+            to_send_point_array.points[0].x = theSelectedPoint.x;
+            to_send_point_array.points[0].y = theSelectedPoint.y;
+            to_send_point_array.points[0].z = theSelectedPoint.z;
+            to_send_point_array.points[1].x = clicked_point.x;
+            to_send_point_array.points[1].y = clicked_point.y;
+            to_send_point_array.points[1].z = clicked_point.z;
+            sendExitPointArray.publish(to_send_point_array);
         }
         finalPointPub.publish(final);
-
         finalExitPointsPub.publish(final_markers);
 
         //ros::Duration(0.5).sleep(); // sleep for half a second
